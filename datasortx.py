@@ -2,8 +2,7 @@ import os
 import pandas as pd
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from pandastable import Table, TableModel
-import warnings
+from pandastable import Table
 
 def choose_file():
     file_path = filedialog.askopenfilename()
@@ -20,14 +19,24 @@ def load_columns():
         messagebox.showerror("Error", "Please select a file.")
         return
 
-    wb = None
-    ws = None
-
     try:
         if selected_file.endswith('.xlsx'):
-            import openpyxl
-            wb = openpyxl.load_workbook(selected_file, read_only=True)
-            ws = wb.active
+            try:
+                df = pd.read_excel(selected_file)
+                columns_to_sort = {}
+
+                for col_name in df.columns:
+                    columns_to_sort[col_name] = tk.IntVar()
+                    tk.Checkbutton(main_window, text=col_name, variable=columns_to_sort[col_name]).pack(anchor=tk.W)
+
+                show_data_btn = tk.Button(main_window, text="Show Data", command=lambda: show_data(df, columns_to_sort))
+                show_data_btn.pack()
+                
+                sort_btn = tk.Button(main_window, text="Sort", command=lambda: sort_columns(df, columns_to_sort))
+                sort_btn.pack()
+
+            except Exception as e:
+                messagebox.showerror("Error", f"An error occurred while reading the Excel file: {str(e)}")
 
         elif selected_file.endswith('.csv'):
             columns_to_sort = {}
@@ -50,9 +59,6 @@ def load_columns():
         messagebox.showerror("Error", "File not found. Please select a valid file.")
     except Exception as e:
         messagebox.showerror("Error", f"An error occurred: {str(e)}")
-    finally:
-        if wb:
-            wb.close()
 
 def show_data(df, columns_to_sort):
     show_data_window = tk.Toplevel(main_window)
